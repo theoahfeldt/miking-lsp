@@ -1,4 +1,5 @@
 include "json.mc"
+include "map.mc"
 
 type Id
 con StrId : String -> Id
@@ -70,6 +71,44 @@ let responseToJson = lam x.
                 ]
   in
   JsonObject members
+
+let jsonToParams = lam x.
+  match x with JsonObject o then
+    Some (ByName o)
+  else match x with JsonArray a then
+    Some (ByPosition a)
+  else
+    None ()
+
+let jsonToId = lam x.
+  match x with JsonString s then
+    Some (StrId s)
+  else match x with JsonInt i then
+    Some (IntId i)
+  else
+    None ()
+
+let jsonToRequest = lam x.
+  let extractRequest = lam arr.
+    let lookupArr = lam k. mapLookupOpt eqstr k arr in
+    let extractJsonString = lam x.
+      match x with JsonString s then Some s else None ()
+    in
+    optionBind (optionBind (lookupArr "method") extractJsonString) (lam method.
+    optionBind (optionBind (lookupArr "params") jsonToParams) (lam params.
+    optionBind (optionBind (lookupArr "id") jsonToId) (lam id.
+    Some { method = method
+         , params = params
+         , id = id
+         })))
+  in
+  match x with JsonObject arr then
+    extractRequest arr
+  else
+    None ()
+
+-- let jsonBatchToRequests
+-- let jsonToResponse
 
 mexpr
 
