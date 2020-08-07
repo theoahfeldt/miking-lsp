@@ -124,20 +124,25 @@ let jsonToRequest = lam x.
 
 mexpr
 
-let testRequest = {method="foo", params=ByPosition [], id=Some (IntId 42)} in
+let testRequest = {method="foo", params=None (), id=Some (IntId 42)} in
+let testJsonRequest = JsonObject [ jsonrpc
+                                 , ("method", JsonString "foo")
+                                 , ("id", JsonInt 42)
+                                 ]
+in
 let testResponse = {result=Failure {code=negi 32700, message="bar", data=None ()}, id=IntId 42} in
-
+let testJsonResponse =
+  JsonObject [ jsonrpc
+             , ("error", JsonObject [ ("code", JsonInt (negi 32700))
+                                    , ("message", JsonString "bar")
+                                    ])
+             , ("id", JsonInt 42)
+             ]
+in
 utest requestToJson testRequest
-with JsonObject [ jsonrpc
-                , ("method", JsonString "foo")
-                , ("params", JsonArray [])
-                , ("id", JsonInt 42)
-                ] in
+with testJsonRequest in
 utest responseToJson testResponse
-with JsonObject [ jsonrpc
-                , ("error", JsonObject [ ("code", JsonInt (negi 32700))
-                                       , ("message", JsonString "bar")
-                                       ])
-                , ("id", JsonInt 42)
-                ] in
+with testJsonResponse in
+utest jsonToRequest testJsonRequest with Some testRequest in
+utest jsonToRequest (JsonObject [ jsonrpc ]) with None () in
 ()
