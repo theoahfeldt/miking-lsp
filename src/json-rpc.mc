@@ -11,7 +11,7 @@ con ByName     : [ (String, JsonValue) ] -> Params
 
 type RpcError = { code    : Int
                 , message : String
-                , data    : Option -- Option JsonValue
+                , data    : Option -- JsonValue
                 }
 
 type RpcResult
@@ -19,8 +19,8 @@ con Success : JsonValue -> RpcResult
 con Failure : RpcError  -> RpcResult
 
 type RpcRequest = { method : String
-                  , params : Params
-                  , id : Option
+                  , params : Option -- Params
+                  , id : Option -- Id
                   }
 type RpcResponse = { result : RpcResult
                    , id : Id
@@ -38,24 +38,27 @@ let idToJson = lam x.
 
 let jsonrpc = ("jsonrpc", JsonString "2.0")
 
+let optionSnoc = lam x. lam y.
+  match y with Some e then snoc x e else x
+
 let requestToJson = lam x.
-  let members = [ jsonrpc
-                , ("method", JsonString x.method)
-                , ("params", paramsToJson x.params)
-                ]
+  let members =
+    optionSnoc
+      (optionSnoc
+        [ jsonrpc , ("method", JsonString x.method) ]
+        (optionMap (lam x. ("params", paramsToJson x)) x.params))
+      (optionMap (lam x. ("id", idToJson x)) x.id)
   in
-  let handleId = lam x. [("id", idToJson x)] in
-  let membersWithId = concat members (optionMapOr [] handleId x.id) in
-  JsonObject membersWithId
+  JsonObject members
 
 let errorToJson = lam x.
-  let members = [ ("code", JsonInt x.code)
-                , ("message", JsonString x.message)
-                ]
+  let members =
+    optionSnoc [ ("code", JsonInt x.code)
+               , ("message", JsonString x.message)
+               ]
+               (optionMap (lam x. ("data", x)) x.data)
   in
-  let handleData = lam x. [("data", x)] in
-  let membersWithData = concat members (optionMapOr [] handleData x.data) in
-  JsonObject membersWithData
+  JsonObject members
 
 let responseToJson = lam x.
   let resultOrError =
