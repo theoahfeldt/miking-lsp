@@ -133,6 +133,12 @@ let jsonToResponse = lam x.
          , id = id
          }))
   in optionBind (getObjectMapping x) extractResponse
+
+let processBatch = lam jsonToRpc. lam x.
+  match x with JsonObject _ then
+    optionMapM jsonToRpc [x]
+  else match x with JsonArray arr then
+    optionMapM jsonToRpc arr
   else
     None ()
 
