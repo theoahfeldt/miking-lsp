@@ -89,29 +89,52 @@ let jsonToId = lam x.
   else
     None ()
 
+let getJsonInt = lam x.
+  match x with JsonInt i then Some i else None ()
 
+let getJsonString = lam x.
+  match x with JsonString s then Some s else None ()
+
+let getObjectMapping = lam x.
+  match x with JsonObject arr then
+    Some (lam k. mapLookupOpt eqstr k arr)
+  else
+    None ()
 
 let jsonToRequest = lam x.
-  let extractRequest = lam arr.
-    let lookupArr = lam k. mapLookupOpt eqstr k arr in
-    let extractJsonString = lam x.
-      match x with JsonString s then Some s else None ()
-    in
-    optionBind (optionBind (lookupArr "method") extractJsonString) (lam method.
-    optionBind (optionInvertMap jsonToParams (lookupArr "params")) (lam params.
-    optionBind (optionInvertMap jsonToId (lookupArr "id")) (lam id.
+  let extractRequest = lam lookup.
+    optionBind (optionBind (lookup "method") getJsonString) (lam method.
+    optionBind (optionInvertMap jsonToParams (lookup "params")) (lam params.
+    optionBind (optionInvertMap jsonToId (lookup "id")) (lam id.
     Some { method = method
          , params = params
          , id = id
          })))
-  in
-  match x with JsonObject arr then
-    extractRequest arr
+  in optionBind (getObjectMapping x) extractRequest
+
+let jsonToResult = lam x. Some (Success x)
+
+let jsonToError = lam x.
+  let extractError = lam lookup.
+    optionBind (optionBind (lookup "code") getJsonInt) (lam code.
+    optionBind (optionBind (lookup "message") getJsonString) (lam msg.
+    Some (Failure { code = code
+                  , message = msg
+                  , data = lookup "data"
+                  })))
+  in optionBind (getObjectMapping x) extractError
+
+let jsonToResponse = lam x.
+  let extractResponse = lam lookup.
+    optionBind (optionOr (optionBind (lookup "result") jsonToResult)
+                         (optionBind (lookup "error") jsonToError)) (lam res.
+    optionBind (optionBind (lookup "id") jsonToId) (lam id.
+    Some { result = res
+         , id = id
+         }))
+  in optionBind (getObjectMapping x) extractResponse
   else
     None ()
-
--- let jsonBatchToRequests
--- let jsonToResponse
 
 mexpr
 
@@ -136,4 +159,6 @@ utest responseToJson testResponse
 with testJsonResponse in
 utest jsonToRequest testJsonRequest with Some testRequest in
 utest jsonToRequest (JsonObject [ jsonrpc ]) with None () in
+utest jsonToResponse testJsonResponse with Some testResponse in
+utest jsonToResponse (JsonObject [ jsonrpc ]) with None () in
 ()
