@@ -1,5 +1,6 @@
 include "json.mc"
 include "map.mc"
+include "utils.mc"
 
 type Id
 con StrId : String -> Id
@@ -37,9 +38,6 @@ let idToJson = lam x.
   else error "idToJson: Arg is not of type Id"
 
 let jsonrpc = ("jsonrpc", JsonString "2.0")
-
-let optionSnoc = lam x. lam y.
-  match y with Some e then snoc x e else x
 
 let requestToJson = lam x.
   let members =
@@ -91,14 +89,7 @@ let jsonToId = lam x.
   else
     None ()
 
-let optionInvert = lam opt.
-  match opt with None () then
-    Some (None ())
-  else match opt with Some (None ()) then
-    None ()
-  else opt
 
-let optionInvertMap = lam f. compose optionInvert (optionMap f)
 
 let jsonToRequest = lam x.
   let extractRequest = lam arr.
