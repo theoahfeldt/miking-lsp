@@ -91,6 +91,15 @@ let jsonToId = lam x.
   else
     None ()
 
+let optionInvert = lam opt.
+  match opt with None () then
+    Some (None ())
+  else match opt with Some (None ()) then
+    None ()
+  else opt
+
+let optionInvertMap = lam f. compose optionInvert (optionMap f)
+
 let jsonToRequest = lam x.
   let extractRequest = lam arr.
     let lookupArr = lam k. mapLookupOpt eqstr k arr in
@@ -98,8 +107,8 @@ let jsonToRequest = lam x.
       match x with JsonString s then Some s else None ()
     in
     optionBind (optionBind (lookupArr "method") extractJsonString) (lam method.
-    optionBind (optionBind (lookupArr "params") jsonToParams) (lam params.
-    optionBind (optionBind (lookupArr "id") jsonToId) (lam id.
+    optionBind (optionInvertMap jsonToParams (lookupArr "params")) (lam params.
+    optionBind (optionInvertMap jsonToId (lookupArr "id")) (lam id.
     Some { method = method
          , params = params
          , id = id
