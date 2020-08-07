@@ -144,14 +144,77 @@ let processBatch = lam jsonToRpc. lam x.
 
 mexpr
 
+-- Requests
+let testNotification = {method="notify", params=None (), id=None ()} in
+let testJsonNotification = JsonObject [ jsonrpc
+                                      , ("method", JsonString "notify")
+                                      ]
+in
+utest requestToJson testNotification with testJsonNotification in
+utest jsonToRequest testJsonNotification with Some testNotification in
+
 let testRequest = {method="foo", params=None (), id=Some (IntId 42)} in
 let testJsonRequest = JsonObject [ jsonrpc
                                  , ("method", JsonString "foo")
                                  , ("id", JsonInt 42)
                                  ]
 in
-let testResponse = {result=Failure {code=negi 32700, message="bar", data=None ()}, id=IntId 42} in
-let testJsonResponse =
+utest requestToJson testRequest with testJsonRequest in
+utest jsonToRequest testJsonRequest with Some testRequest in
+
+let testRequestByPosition = {method="add", params=Some (ByPosition [JsonInt 3, JsonInt 10]), id=Some (StrId "myId")} in
+let testJsonRequestByPosition =
+  JsonObject [ jsonrpc
+             , ("method", JsonString "add")
+             , ("params", JsonArray [JsonInt 3, JsonInt 10])
+             , ("id", JsonString "myId")
+             ]
+in
+
+utest requestToJson testRequestByPosition with testJsonRequestByPosition in
+utest jsonToRequest testJsonRequestByPosition with Some testRequestByPosition in
+
+let testRequestByName = {method="myMethod", params=Some (ByName [("foo", JsonInt 5), ("bar", JsonString "hello")]), id=Some (IntId 20)} in
+let testJsonRequestByName =
+  JsonObject [ jsonrpc
+             , ("method", JsonString "myMethod")
+             , ("params", JsonObject [("foo", JsonInt 5), ("bar", JsonString "hello")])
+             , ("id", JsonInt 20)
+             ]
+in
+
+utest requestToJson testRequestByName with testJsonRequestByName in
+utest jsonToRequest testJsonRequestByName with Some testRequestByName in
+
+-- Incorrect data
+utest jsonToRequest (JsonInt 5) with None () in
+let missingMethod = JsonObject [ jsonrpc
+                               , ("params", JsonArray [])
+                               , ("id", JsonInt 42)
+                               ]
+in
+utest jsonToRequest missingMethod with None () in
+let boolId = JsonObject [ jsonrpc
+                        , ("method", JsonString "foo")
+                        , ("id", JsonBool true)
+                        ]
+in
+utest jsonToRequest boolId with None () in
+
+-- Responses
+let testResponseSuccess = {result=Success (JsonInt 13), id=StrId "myId"} in
+let testJsonResponseSuccess =
+  JsonObject [ jsonrpc
+             , ("result", JsonInt 13)
+             , ("id", JsonString "myId")
+             ]
+in
+
+utest responseToJson testResponseSuccess with testJsonResponseSuccess in
+utest jsonToResponse testJsonResponseSuccess with Some testResponseSuccess in
+
+let testResponseFailure = {result=Failure {code=negi 32700, message="bar", data=None ()}, id=IntId 42} in
+let testJsonResponseFailure =
   JsonObject [ jsonrpc
              , ("error", JsonObject [ ("code", JsonInt (negi 32700))
                                     , ("message", JsonString "bar")
@@ -159,12 +222,77 @@ let testJsonResponse =
              , ("id", JsonInt 42)
              ]
 in
-utest requestToJson testRequest
-with testJsonRequest in
-utest responseToJson testResponse
-with testJsonResponse in
-utest jsonToRequest testJsonRequest with Some testRequest in
-utest jsonToRequest (JsonObject [ jsonrpc ]) with None () in
-utest jsonToResponse testJsonResponse with Some testResponse in
-utest jsonToResponse (JsonObject [ jsonrpc ]) with None () in
+
+utest responseToJson testResponseFailure with testJsonResponseFailure in
+utest jsonToResponse testJsonResponseFailure with Some testResponseFailure in
+
+let testResponseData = {result=Failure {code=negi 32700, message="bar", data=Some (JsonInt 257)}, id=IntId 42} in
+let testJsonResponseData =
+  JsonObject [ jsonrpc
+             , ("error", JsonObject [ ("code", JsonInt (negi 32700))
+                                    , ("message", JsonString "bar")
+                                    , ("data", JsonInt 257)
+                                    ])
+             , ("id", JsonInt 42)
+             ]
+in
+
+utest responseToJson testResponseData with testJsonResponseData in
+utest jsonToResponse testJsonResponseData with Some testResponseData in
+
+-- Incorrect data
+let missingId =
+  JsonObject [ jsonrpc
+             , ("result", JsonInt 13)
+             ]
+in
+utest jsonToResponse missingId with None () in
+let missingResultAndError =
+  JsonObject [ jsonrpc
+             , ("id", JsonInt 42)
+             ]
+in
+utest jsonToResponse missingResultAndError with None () in
+let missingErrorCode =
+  JsonObject [ jsonrpc
+             , ("error", JsonObject [ ("message", JsonString "bar") ])
+             , ("id", JsonInt 42)
+             ]
+in
+utest jsonToResponse missingErrorCode with None () in
+let missingErrorMessage =
+  JsonObject [ jsonrpc
+             , ("error", JsonObject [ ("code", JsonInt (negi 32700)) ])
+             , ("id", JsonInt 42)
+             ]
+in
+utest jsonToResponse missingErrorCode with None () in
+
+-- processBatch
+let allJsonRequests = [ testJsonNotification
+                      , testJsonRequest
+                      , testJsonRequestByName
+                      , testJsonRequestByPosition
+                      ]
+in
+let allRequests = [ testNotification
+                  , testRequest
+                  , testRequestByName
+                  , testRequestByPosition
+                  ]
+in
+utest processBatch jsonToRequest (JsonArray allJsonRequests) with Some allRequests in
+let allJsonResponses = [ testJsonResponseSuccess
+                       , testJsonResponseFailure
+                       , testJsonResponseData
+                       ]
+in
+let allResponses = [ testResponseSuccess
+                   , testResponseFailure
+                   , testResponseData
+                   ]
+in
+utest processBatch jsonToResponse (JsonArray allJsonResponses) with Some allResponses in
+
+utest processBatch jsonToRequest testJsonRequest with Some [testRequest] in
 ()
