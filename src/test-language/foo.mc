@@ -7,7 +7,7 @@ lang FooLang
   syn Term =
   | TmVar String
   | TmPrim Primitive
-  | TmApp (Expr, Expr)
+  | TmApp (Term, Term)
 
   sem isvalue =
   | TmVar _ -> true
@@ -23,15 +23,15 @@ lang FooLang
   | _ -> error "invalid primitive encountered"
 
   sem eval =
-  | TmVar s -> TmVar s
-  | TmPrim p -> TmPrim p
+  | TmVar s -> Some (TmVar s)
+  | TmPrim p -> Some (TmPrim p)
   | TmApp (tm1, tm2) & t ->
     match tm1 with TmPrim p then
       eval (applyPrimitive tm2 p)
     else match tm1 with TmApp _ then
-      eval (TmApp (eval tm1, tm2))
+      optionMap (lam t. eval (TmApp (t , tm2))) (eval tm1)
     else
-      t
+      None ()
 
   sem formatPrim =
   | K (None ()) -> "K()"

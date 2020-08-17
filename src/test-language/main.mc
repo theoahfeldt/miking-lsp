@@ -15,8 +15,13 @@ let main = lam _.
     let parsed = parse_foo (get argv 1) in
     match parsed with Success (ast, _) then
       use FooLang in
+      let _ = print "Evaluating: " in
+      let _ = printLn (formatTm ast) in
       let result = eval ast in
-      printLn (formatTm result)
+      match result with Some t then
+        printLn (formatTm t)
+      else
+        printLn ("Stuck term")
     else printLn (show_error parsed)
 
 mexpr
