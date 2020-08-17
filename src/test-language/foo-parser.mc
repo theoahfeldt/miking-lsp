@@ -149,17 +149,16 @@ recursive
       bind (many1 atom) (lam as.
       pure (foldl1 (curry (lam x. TmApp x)) as))
     in
-    -- let let_ =
-    --   let _ = debug "== Parsing let ==" in
-    --   bind (reserved "let") (lam _.
-    --   bind identifier (lam x.
-    --   bind (optional (apr (symbol ":") ty)) (lam t.
-    --   bind (symbol "=") (lam _.
-    --   bind expr (lam e.
-    --   bind (reserved "in") (lam _.
-    --   bind expr (lam body.
-    --   pure (TmLet(x, t, e, body)))))))))
-    -- in
+    let let_ =
+      let _ = debug "== Parsing let ==" in
+      bind (reserved "let") (lam _.
+      bind identifier (lam x.
+      bind (symbol "=") (lam _.
+      bind expr (lam e.
+      bind (reserved "in") (lam _.
+      bind expr (lam body.
+      pure (TmLet(x, e, body))))))))
+    in
     -- let if_ =
     --   let _ = debug "== Parsing if ==" in
     --   bind (reserved "if") (lam _.
@@ -170,7 +169,9 @@ recursive
     --   bind expr (lam els.
     --   pure (TmIf(cnd, thn, els))))))))
     -- in
-    label "expression" left st
+    label "expression"
+    (alt left
+         let_) st
     -- (alt let_
     -- (alt if_
 end

@@ -1,17 +1,21 @@
+include "map.mc"
+include "string.mc"
+
 lang FooLang
   syn Primitive =
   | K Option
   | S (Option, Option)
-  | Builtin String
 
   syn Term =
   | TmVar String
   | TmPrim Primitive
+  | TmLet (String, Term, Term)
   | TmApp (Term, Term)
 
   sem isvalue =
   | TmVar _ -> true
   | TmPrim _ -> true
+  | TmLet _ -> false
   | TmApp _ -> false
 
   sem applyPrimitive (tm : Term) =
@@ -22,16 +26,16 @@ lang FooLang
   | S (Some t1, Some t2) -> TmApp (TmApp (t1, tm), TmApp (t2, tm))
   | _ -> error "invalid primitive encountered"
 
-  sem eval =
-  | TmVar s -> Some (TmVar s)
+  sem eval (env : [(String, Term)]) =
+  | TmVar s -> mapLookupOpt eqstr s env
   | TmPrim p -> Some (TmPrim p)
   | TmApp (tm1, tm2) & t ->
     match tm1 with TmPrim p then
-      eval (applyPrimitive tm2 p)
-    else match tm1 with TmApp _ then
-      optionMap (lam t. eval (TmApp (t , tm2))) (eval tm1)
+      eval env (applyPrimitive tm2 p)
     else
-      None ()
+      optionBind (eval env tm1) (lam t.
+      eval env (TmApp (t, tm2)))
+  | TmLet (name, expr, body) -> eval (cons (name, expr) env) body
 
   sem formatPrim =
   | K (None ()) -> "K()"
@@ -45,15 +49,22 @@ lang FooLang
   | TmVar s -> s
   | TmPrim p -> formatPrim p
   | TmApp (tm1, tm2) -> join ["(", formatTm tm1, " ", formatTm tm2, ")"]
+  | TmLet (n, expr, body) ->
+    strJoin " " ["let", n, "=", formatTm expr, "in", formatTm body]
 end
 
+let builtins =
+    use FooLang in
+    [ ("s", TmPrim (S (None (), None ())))
+    , ("k", TmPrim (K (None ())))
+    ]
 
 mexpr
 
 use FooLang in
 let k = TmPrim (K (None ())) in
 let s = TmPrim (S (None (), None ())) in
-utest eval (TmApp (TmApp (TmApp (s, k), TmVar "hej"), TmVar "foo")) with TmVar "foo" in
+utest eval [] (TmApp (TmApp (TmApp (s, k), TmVar "hej"), TmVar "foo")) with TmVar "foo" in
 ()
 
 

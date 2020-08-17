@@ -17,7 +17,7 @@ let main = lam _.
       use FooLang in
       let _ = print "Evaluating: " in
       let _ = printLn (formatTm ast) in
-      let result = eval ast in
+      let result = eval builtins ast in
       match result with Some t then
         printLn (formatTm t)
       else
