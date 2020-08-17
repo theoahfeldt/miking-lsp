@@ -23,11 +23,8 @@ let ws = void (many (alt line_comment spaces1))
 -- `token p` parses `p` and any trailing whitespace or comments.
 let token = lex_token ws
 
--- string : String -> Parser String
-let string = lam s. token (lex_string s)
-
 -- symbol : String -> Parser String
-let symbol = string
+let symbol = lam s. token (lex_string s)
 
 let is_valid_char = lam c.
   or (is_alphanum c) (eqchar c '_')

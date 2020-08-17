@@ -24,7 +24,6 @@ lang FooLang
   | S (None (), None ()) -> TmPrim (S (Some tm, None ()))
   | S (Some t, None ()) -> TmPrim (S (Some t, Some tm))
   | S (Some t1, Some t2) -> TmApp (TmApp (t1, tm), TmApp (t2, tm))
-  | _ -> error "invalid primitive encountered"
 
   sem eval (env : [(String, Term)]) =
   | TmVar s -> mapLookupOpt eqstr s env
@@ -43,7 +42,6 @@ lang FooLang
   | S (None (), None ()) -> "S()"
   | S (Some t, None ()) -> join ["S(", formatTm t, ")"]
   | S (Some t1, Some t2) -> join ["S(", formatTm t1, ", ", formatTm t2, ")"]
-  | _ -> error "invalid primitive encountered"
 
   sem formatTm =
   | TmVar s -> s
