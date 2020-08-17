@@ -46,7 +46,11 @@ lang FooLang
   sem formatTm =
   | TmVar s -> s
   | TmPrim p -> formatPrim p
-  | TmApp (tm1, tm2) -> join ["(", formatTm tm1, " ", formatTm tm2, ")"]
+  | TmApp (tm1, tm2) ->
+    match tm2 with TmApp _ then
+      join [formatTm tm1, " (", formatTm tm2, ")"]
+    else
+      join [formatTm tm1, " ", formatTm tm2]
   | TmLet (n, expr, body) ->
     strJoin " " ["let", n, "=", formatTm expr, "in", formatTm body]
 end
