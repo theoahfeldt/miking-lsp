@@ -22,17 +22,16 @@ lang FooLang
   | S (Some t1, Some t2) -> TmApp (TmApp (t1, tm), TmApp (t2, tm))
   | _ -> error "invalid primitive encountered"
 
-  sem step =
-  | TmVar s -> None ()
-  | TmPrim p -> None ()
-  | TmApp (tm1, tm2) ->
-    match tm1 with TmPrim p then
-      Some (applyPrimitive tm2 p)
-    else
-      optionMap (lam t. TmApp (t, tm2)) (step tm1)
-
   sem eval =
-  | tm -> optionGetOr tm (optionMap eval (step tm))
+  | TmVar s -> TmVar s
+  | TmPrim p -> TmPrim p
+  | TmApp (tm1, tm2) & t ->
+    match tm1 with TmPrim p then
+      eval (applyPrimitive tm2 p)
+    else match tm1 with TmApp _ then
+      eval (TmApp (eval tm1, tm2))
+    else
+      t
 
   sem formatPrim =
   | K (None ()) -> "K()"
