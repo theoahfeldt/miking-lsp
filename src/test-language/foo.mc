@@ -3,8 +3,13 @@ include "string.mc"
 
 lang FooLang
   syn Primitive =
-  | K Option
-  | S (Option, Option)
+  | PId ()
+  | PCompose (Option, Option)
+  | PConst Option
+  | PAp (Option, Option)
+  | PJoin Option
+  | PFlip (Option, Option)
+  | POn (Option, Option, Option)
 
   syn Term =
   | TmVar String
@@ -19,11 +24,24 @@ lang FooLang
   | TmApp _ -> false
 
   sem applyPrimitive (tm : Term) =
-  | K (None ()) -> TmPrim (K (Some tm))
-  | K (Some t) -> t
-  | S (None (), None ()) -> TmPrim (S (Some tm, None ()))
-  | S (Some t, None ()) -> TmPrim (S (Some t, Some tm))
-  | S (Some t1, Some t2) -> TmApp (TmApp (t1, tm), TmApp (t2, tm))
+  | PId () -> tm
+  | PCompose (None (), None ()) -> TmPrim (PCompose (Some tm, None ()))
+  | PCompose (Some t, None ()) -> TmPrim (PCompose (Some t, Some tm))
+  | PCompose (Some t1, Some t2) -> TmApp (t1, TmApp (t2, tm))
+  | PConst (None ()) -> TmPrim (PConst (Some tm))
+  | PConst (Some t) -> t
+  | PAp (None (), None ()) -> TmPrim (PAp (Some tm, None ()))
+  | PAp (Some t, None ()) -> TmPrim (PAp (Some t, Some tm))
+  | PAp (Some t1, Some t2) -> TmApp (TmApp (t1, tm), TmApp (t2, tm))
+  | PJoin (None ()) -> TmPrim (PJoin (Some tm))
+  | PJoin (Some t) -> TmApp (TmApp (t, tm), tm)
+  | PFlip (None (), None ()) -> TmPrim (PFlip (Some tm, None ()))
+  | PFlip (Some t, None ()) -> TmPrim (PFlip (Some t, Some tm))
+  | PFlip (Some t1, Some t2) -> TmApp (TmApp (t1, tm), t2)
+  | POn (None (), None (), None ()) -> TmPrim (POn (Some tm, None (), None ()))
+  | POn (Some t, None (), None ()) -> TmPrim (POn (Some t, Some tm, None ()))
+  | POn (Some t1, Some t2, None ()) -> TmPrim (POn (Some t1, Some t2, Some tm))
+  | POn (Some t1, Some t2, Some t3) -> TmApp (TmApp (t1, TmApp (t2, t3)), TmApp (t2, tm))
 
   sem eval (env : [(String, Term)]) =
   | TmVar s -> mapLookupOpt eqstr s env
@@ -37,11 +55,24 @@ lang FooLang
   | TmLet (name, expr, body) -> eval (cons (name, expr) env) body
 
   sem formatPrim =
-  | K (None ()) -> "K()"
-  | K (Some t) -> join ["K(", formatTm t, ")"]
-  | S (None (), None ()) -> "S()"
-  | S (Some t, None ()) -> join ["S(", formatTm t, ")"]
-  | S (Some t1, Some t2) -> join ["S(", formatTm t1, ", ", formatTm t2, ")"]
+  | PId () -> "id"
+  | PCompose (None (), None ()) -> "compose"
+  | PCompose (Some t, None ()) -> join ["compose (", formatTm t, ")"]
+  | PCompose (Some t1, Some t2) -> join ["compose (", formatTm t1, ") (", formatTm t2, ")"]
+  | PConst (None ()) -> "const"
+  | PConst (Some t) -> join ["const (", formatTm t, ")"]
+  | PAp (None (), None ()) -> "ap"
+  | PAp (Some t, None ()) -> join ["ap (", formatTm t, ")"]
+  | PAp (Some t1, Some t2) -> join ["ap (", formatTm t1, ") (", formatTm t2, ")"]
+  | PJoin (None ()) -> "join"
+  | PJoin (Some t) -> join ["join (", formatTm t, ")"]
+  | PFlip (None (), None ()) -> "flip"
+  | PFlip (Some t, None ()) -> join ["flip (", formatTm t, ")"]
+  | PFlip (Some t1, Some t2) -> join ["flip (", formatTm t1, ") (", formatTm t2, ")"]
+  | POn (None (), None (), None ()) -> "on"
+  | POn (Some t, None (), None ()) -> join ["on (", formatTm t, ")"]
+  | POn (Some t1, Some t2, None ()) -> join ["on (", formatTm t1, ") (", formatTm t2, ")"]
+  | POn (Some t1, Some t2, Some t3) -> join ["on (", formatTm t1, ") (", formatTm t2, ") (", formatTm t3, ")"]
 
   sem formatTm =
   | TmVar s -> s
@@ -57,8 +88,13 @@ end
 
 let builtins =
     use FooLang in
-    [ ("s", TmPrim (S (None (), None ())))
-    , ("k", TmPrim (K (None ())))
+    [ ("id", TmPrim (PId ()))
+    , ("compose", TmPrim (PCompose (None (), None ())))
+    , ("const", TmPrim (PConst (None ())))
+    , ("ap", TmPrim (PAp (None (), None ())))
+    , ("join", TmPrim (PJoin (None ())))
+    , ("flip", TmPrim (PFlip (None (), None ())))
+    , ("on", TmPrim (POn (None (), None (), None ())))
     ]
 
 mexpr
