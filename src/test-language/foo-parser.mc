@@ -124,7 +124,9 @@ recursive
     --   let _ = debug "== Parsing character ==" in
     --   fmap (lam c. TmConst (CChar c)) char_lit
     -- in
-      label "atomic expression" var_access
+      label "atomic expression"
+      (alt (parens expr)
+           var_access)
       -- (alt seq
       -- (alt tuple
       -- (alt (try float)
