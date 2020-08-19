@@ -37,7 +37,7 @@ let reserved = lam s.
   void (token (apl (lex_string s) (not_followed_by (satisfy is_valid_char ""))))
 
 -- number : Parser Int
-let number = token lex_number
+let number = token (alt (apr (lex_char '-') (fmap negi lex_number)) lex_number)
 
 -- parens : Parser a -> Parser a
 let parens = wrapped_in (symbol "(") (symbol ")")
