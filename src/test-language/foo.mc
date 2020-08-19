@@ -15,6 +15,7 @@ lang FooLang
   | PAdd ()
   | PMul ()
   | PString String
+  | PConcat ()
   | PPrint ()
 
   syn Term =
@@ -54,10 +55,17 @@ lang FooLang
       Some (TmPrim (PInt (muli i1 i2), []))
     else None ()
     ))
+  | TmPrim (PConcat (), [t]) ->
+    optionBind (eval env t) (lam r1.
+    optionBind (eval env tm) (lam r2.
+    match (r1,r2) with (TmPrim (PString s1, []), TmPrim (PString s2, [])) then
+      Some (TmPrim (PString (concat s1 s2), []))
+    else None ()
+    ))
   | TmPrim (PPrint (), []) ->
     optionBind (eval env tm) (lam r.
     match r with TmPrim (PString s, []) then
-      let _ = print s in
+      let _ = printLn s in
       Some (TmPrim (PUnit (), []))
     else None ()
     )
@@ -92,6 +100,7 @@ lang FooLang
   | PAdd () -> "add"
   | PMul () -> "mul"
   | PString s -> cons '"' (snoc s '"')
+  | PConcat () -> "concat"
   | PPrint () -> "print"
   | PUnit () -> "()"
 
@@ -123,5 +132,6 @@ let builtins =
       , POn ()
       , PAdd ()
       , PMul ()
+      , PConcat ()
       , PPrint ()
       ]
