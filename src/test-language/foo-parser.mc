@@ -46,7 +46,7 @@ let parens = wrapped_in (symbol "(") (symbol ")")
 let string_lit = token lex_string_lit
 
 -- List of reserved keywords
-let keywords = ["let", "in", "if", "true", "false"]
+let keywords = ["let", "in"]
 
 -- ident : Parser String
 --
@@ -85,11 +85,6 @@ recursive
       let _ = debug "== Parsing num ==" in
       fmap (lam n. TmPrim (PInt n, [])) number
     in
-    -- let bool =
-    --   let _ = debug "== Parsing bool ==" in
-    --   alt (apr (reserved "true")  (pure (TmConst (CBool true))))
-    --       (apr (reserved "false") (pure (TmConst (CBool false))))
-    -- in
     let str_lit =
       let _ = debug "== Parsing string ==" in
       fmap (lam s. TmPrim (PString s, [])) string_lit
