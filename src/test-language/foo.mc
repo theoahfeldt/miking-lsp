@@ -10,6 +10,12 @@ lang FooLang
   | PJoin ()
   | PFlip ()
   | POn ()
+  | PUnit ()
+  | PInt Int
+  | PAdd ()
+  | PMul ()
+  | PString String
+  | PPrint ()
 
   syn Term =
   | TmVar String
@@ -23,15 +29,39 @@ lang FooLang
   | TmLet _ -> false
   | TmApp _ -> false
 
-  sem applyPrimitive (tm : Term) =
-  | TmPrim (PId (), []) -> tm
-  | TmPrim (PCompose (), [t1, t2]) -> TmApp (t1, TmApp (t2, tm))
-  | TmPrim (PConst (), [t]) -> t
-  | TmPrim (PAp (), [t1, t2]) -> TmApp (TmApp (t1, tm), TmApp (t2, tm))
-  | TmPrim (PJoin (), [t]) -> TmApp (TmApp (t, tm), tm)
-  | TmPrim (PFlip (), [t1, t2]) -> TmApp (TmApp (t1, tm), t2)
-  | TmPrim (POn (), [t1, t2, t3]) -> TmApp (TmApp (t1, TmApp (t2, t3)), TmApp (t2, tm))
-  | TmPrim (p, args) -> TmPrim (p, (snoc args tm))
+  sem applyPrimitive (env : [(String, Term)]) (tm : Term) =
+  | TmPrim (PUnit _, _)
+  | TmPrim (PInt _, _)
+  | TmPrim (PString _, _) -> None ()
+  | TmPrim (PId (), []) -> Some tm
+  | TmPrim (PCompose (), [t1, t2]) -> Some (TmApp (t1, TmApp (t2, tm)))
+  | TmPrim (PConst (), [t]) -> Some t
+  | TmPrim (PAp (), [t1, t2]) -> Some (TmApp (TmApp (t1, tm), TmApp (t2, tm)))
+  | TmPrim (PJoin (), [t]) -> Some (TmApp (TmApp (t, tm), tm))
+  | TmPrim (PFlip (), [t1, t2]) -> Some (TmApp (TmApp (t1, tm), t2))
+  | TmPrim (POn (), [t1, t2, t3]) -> Some (TmApp (TmApp (t1, TmApp (t2, t3)), TmApp (t2, tm)))
+  | TmPrim (PAdd (), [t]) ->
+    optionBind (eval env t) (lam r1.
+    optionBind (eval env tm) (lam r2.
+    match (r1,r2) with (TmPrim (PInt i1, []), TmPrim (PInt i2, [])) then
+      Some (TmPrim (PInt (addi i1 i2), []))
+    else None ()
+    ))
+  | TmPrim (PMul (), [t]) ->
+    optionBind (eval env t) (lam r1.
+    optionBind (eval env tm) (lam r2.
+    match (r1,r2) with (TmPrim (PInt i1, []), TmPrim (PInt i2, [])) then
+      Some (TmPrim (PInt (muli i1 i2), []))
+    else None ()
+    ))
+  | TmPrim (PPrint (), []) ->
+    optionBind (eval env tm) (lam r.
+    match r with TmPrim (PString s, []) then
+      let _ = print s in
+      Some (TmPrim (PUnit (), []))
+    else None ()
+    )
+  | TmPrim (p, args) -> Some (TmPrim (p, (snoc args tm)))
 
   sem eval (env : [(String, Term)]) =
   | TmVar s ->
@@ -44,7 +74,7 @@ lang FooLang
   | TmPrim _ & t -> Some t
   | TmApp (tm1, tm2) & t ->
     match tm1 with TmPrim _ then
-      eval env (applyPrimitive tm2 tm1)
+      optionBind (applyPrimitive env tm2 tm1) (eval env)
     else
       optionBind (eval env tm1) (lam t.
       eval env (TmApp (t, tm2)))
@@ -58,6 +88,12 @@ lang FooLang
   | PJoin () -> "join"
   | PFlip () -> "flip"
   | POn () -> "on"
+  | PInt i -> int2string i
+  | PAdd () -> "add"
+  | PMul () -> "mul"
+  | PString s -> cons '"' (snoc s '"')
+  | PPrint () -> "print"
+  | PUnit () -> "()"
 
   sem formatTmPrec (prec : Int) =
   | TmVar s -> s
@@ -85,4 +121,7 @@ let builtins =
       , PJoin ()
       , PFlip ()
       , POn ()
+      , PAdd ()
+      , PMul ()
+      , PPrint ()
       ]
