@@ -77,12 +77,12 @@ end
 
 let builtins =
     use FooLang in
-    map (lam x. (x.0, TmPrim (x.1, [])))
-      [ ("id", PId ())
-      , ("compose", PCompose ())
-      , ("const", PConst ())
-      , ("ap", PAp ())
-      , ("join", PJoin ())
-      , ("flip", PFlip ())
-      , ("on", POn ())
+    map (lam x. (formatPrim x, TmPrim (x, [])))
+      [ PId ()
+      , PCompose ()
+      , PConst ()
+      , PAp ()
+      , PJoin ()
+      , PFlip ()
+      , POn ()
       ]
