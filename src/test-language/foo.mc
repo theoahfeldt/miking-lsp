@@ -34,7 +34,13 @@ lang FooLang
   | TmPrim (p, args) -> TmPrim (p, (snoc args tm))
 
   sem eval (env : [(String, Term)]) =
-  | TmVar s -> mapLookupOpt eqstr s env
+  | TmVar s ->
+    optionBind (index (lam x. eqstr s x.0) env) (lam i.
+    let old_env = (splitAt env i).1 in
+    match old_env with [(_, tm)] ++ rest then
+      eval rest tm
+    else
+      None ())
   | TmPrim _ & t -> Some t
   | TmApp (tm1, tm2) & t ->
     match tm1 with TmPrim _ then
