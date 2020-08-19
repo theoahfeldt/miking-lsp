@@ -16,3 +16,5 @@ let optionMapM = lam f. lam l.
         l
 
 let optionFoldMap = lam f. compose (foldr optionOr (None ())) (map f)
+
+let optionCompose = lam f. lam g. lam x. optionBind (g x) f

@@ -38,24 +38,20 @@ let matchNewline = lam line.
 let readHeaderLines = unfoldr (compose matchNewline readLine)
 
 let readRequests =
-  optionBind (optionMapM parseHeaderField (readHeaderLines ())) (lam headers.
-  let len = optionFoldMap (lam x. match x with ContentLength i then Some i else None ()) headers in
-  optionBind len (compose parseJson readBytes))
-
-let readRequests =
-  recursive let helper =
-    let line = readLine () in
-    let new_acc = concat acc line in
-    match parseJson new_acc with Some json then
-       processBatch jsonToRequest json
+  let getLength = lam x.
+    match x with ContentLength i then
+      Some i
     else
-      helper new_acc
-  in helper ""
+      None ()
+  in
+  (optionCompose (processBatch jsonToRequest)
+  (optionCompose (compose parseJson readBytes)
+  (optionCompose (optionFoldMap getLength)
+  (compose       (optionMapM parseHeaderField)
+                 readHeaderLines))))
 
-let serverMain = lam _.
-  let requests = readRequests () in
-  let responses = processRequests requests in
-  let _ = putResponse responses in
-  serverMain ()
-
-let zerverMain = serverMain, but spelled with a z
+let serverMain =
+  let _ = (optionCompose putResponses
+          (optionCompose processRequests
+                         readRequests)) ()
+  in serverMain ()
