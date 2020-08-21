@@ -65,14 +65,17 @@ let readRequests =
   (compose       (optionMapM parseHeaderField)
                  readHeaderLines)))))
 
-let processRequests = lam _. lam _. lam jsonRpcLst. -- Implement me!
-    Some (join (map (compose formatJson requestToJson) jsonRpcLst))
+let processRequests = lam _. lam _. lam requestLst. lam state. -- Implement me!
+    (join (map (compose formatJson requestToJson) requestLst), state)
 let putResponses = printLn -- Implement me!
 
 recursive
-let serverMain = lam handleNotification. lam handleRequest.
-  let _ = (compose       (optionMap putResponses)
-          (optionCompose (processRequests handleNotification handleRequest)
-                         readRequests)) ()
-  in serverMain ()
+let serverMain = lam handleNotification. lam handleRequest. lam state.
+  let requests = readRequests () in
+  match requests with Some r then
+    let result = processRequests handleNotification handleRequest r state in
+    let _ = putResponses result.0 in
+    serverMain handleNotification handleRequest result.1
+  else
+    serverMain handleNotification handleRequest state
 end

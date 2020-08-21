@@ -5,4 +5,4 @@ let handleRequest = lam _. ()
 
 mexpr
 
-serverMain handleNotification handleRequest
+serverMain handleNotification handleRequest ()
