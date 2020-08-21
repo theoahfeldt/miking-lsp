@@ -3,9 +3,6 @@ include "json.mc"
 include "json-rpc.mc"
 include "utils.mc"
 
-let token = lex_token spaces
-let lexString = compose token lex_string
-let lexChar = compose token lex_char
 let lexAnything = void (many (satisfy (const true) ""))
 
 type HeaderField
@@ -13,18 +10,15 @@ con ContentLength: Int -> HeaderField
 con ContentType: () -> HeaderField
 
 let parseHeaderField = lam s.
-  let len = apr (lexString "Length")
-           (apr (lexChar ':')
-                (fmap (lam x. ContentLength x) (token lex_int)))
+  let len = (apr (lex_string "Length: ")
+                 (fmap (lam x. ContentLength x) lex_number))
   in
-  let tpe = apr (lexString "Type")
-           (apr (lexChar ':')
-                (fmap (lam x. ContentType x) lexAnything))
+  let tpe = (apr (lex_string "Type: ")
+                 (fmap (lam x. ContentType x) lexAnything))
   in
-  let headerField = apr spaces
-                   (apr (lexString "Content-")
-                   (apl (alt len tpe)
-                        end_of_input))
+  let headerField = (apr (lex_string "Content-")
+                    (apl (alt len tpe)
+                         end_of_input))
   in match (run_parser "" headerField s) with Success (hdr, pos) then
     Some hdr
   else
@@ -35,6 +29,12 @@ let matchNewline = lam line.
     None ()
   else
     Some (line, ())
+
+utest parseHeaderField "Content-Length: 50" with Some (ContentLength 50)
+utest parseHeaderField "Content-Type:   sh13ETRNU-upsht!!rntdTEFrty" with Some (ContentType ())
+utest parseHeaderField "Content-Length:  50" with None ()
+utest parseHeaderField "Content-Length: 50hej" with None ()
+utest parseHeaderField " Content-Type: sh13ETRNU-upsht!!rntdTEFrty" with None ()
 
 let readHeaderLines = unfoldr (compose matchNewline readLine)
 
