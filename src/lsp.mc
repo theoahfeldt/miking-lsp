@@ -24,17 +24,18 @@ let parseHeaderField = lam s.
   else
     None ()
 
-let matchNewline = lam line.
-  match line with "" then
-    None ()
-  else
-    Some (line, ())
-
 utest parseHeaderField "Content-Length: 50" with Some (ContentLength 50)
 utest parseHeaderField "Content-Type:   sh13ETRNU-upsht!!rntdTEFrty" with Some (ContentType ())
 utest parseHeaderField "Content-Length:  50" with None ()
 utest parseHeaderField "Content-Length: 50hej" with None ()
 utest parseHeaderField " Content-Type: sh13ETRNU-upsht!!rntdTEFrty" with None ()
+
+let matchNewline = lam line.
+  match line with "\n" then
+    None ()
+  else match line with str ++ "\n" then
+    Some (str, ())
+  else error "Unexpected end of input"
 
 let readHeaderLines = unfoldr (compose matchNewline readLine)
 
