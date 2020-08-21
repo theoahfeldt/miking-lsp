@@ -8,6 +8,7 @@ let lexString = compose token lex_string
 let lexChar = compose token lex_char
 let lexAnything = void (many (satisfy (const true) ""))
 
+type HeaderField
 con ContentLength: Int -> HeaderField
 con ContentType: () -> HeaderField
 
@@ -37,6 +38,19 @@ let matchNewline = lam line.
 
 let readHeaderLines = unfoldr (compose matchNewline readLine)
 
+let readBody = lam toRead.
+  recursive let f = lam len. lam acc.
+    match readBytesAsString len with (readLen, str) then
+      let new_acc = concat acc str in
+      if lti readLen len then
+        f (subi len readLen) new_acc
+      else
+        new_acc
+    else
+      error "Not possible"
+  in
+  f toRead ""
+
 let readRequests =
   let getLength = lam x.
     match x with ContentLength i then
@@ -45,13 +59,18 @@ let readRequests =
       None ()
   in
   (optionCompose (processBatch jsonToRequest)
-  (optionCompose (compose parseJson readBytes)
+  (optionCompose (compose parseJson readBody)
   (optionCompose (optionFoldMap getLength)
   (compose       (optionMapM parseHeaderField)
                  readHeaderLines))))
 
-let serverMain =
-  let _ = (optionCompose putResponses
+let processRequests = lam _. Some ()
+let putResponses = lam _. printLn "Hello World!"
+
+recursive
+let serverMain = lam _.
+  let _ = (compose       (optionMap putResponses)
           (optionCompose processRequests
                          readRequests)) ()
   in serverMain ()
+end
