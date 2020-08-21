@@ -1,3 +1,20 @@
+-- lsp.mc
+--
+-- This file contains a skeleton for an implementation of an LSP language server
+--
+-- serverMain is the main function to start the server: currently it reads any
+-- LSP messages it receives, parses them, and then prints them back to stdout.
+--
+-- The intention is for serverMain to take two handlers - one for notifications
+-- and one for requests, which it calls on the parsed LSP message to produce a
+-- response and/or update the server state. These handlers essentially
+-- constitute the language-specific part of the implementation.
+--
+-- In addition, the messages are currently parsed to JSON-RPC, which the LSP
+-- protocol is built upon. However, it would be best to have an additional layer
+-- of abstraction with types specifically for LSP, to make the implementation
+-- of the handlers more clean.
+
 include "parser.mc"
 include "json.mc"
 include "json-rpc.mc"
@@ -57,19 +74,29 @@ let readRequests =
     else
       None ()
   in
+  -- rpcToLsp: RpcRequest -> NotificationOrRequest
   let rpcToLsp = lam x. Some x in -- Implement me!
-  (optionCompose rpcToLsp
+  (optionCompose (optionMapM rpcToLsp)
   (optionCompose (processBatch jsonToRequest)
   (optionCompose (compose parseJson readBody)
   (optionCompose (optionFoldMap getLength)
   (compose       (optionMapM parseHeaderField)
                  readHeaderLines)))))
 
+-- processRequests: (Notification -> State -> ((), State)) ->
+--                  (Request -> State -> (Response, State)) ->
+--                  [NotificationOrRequest] ->
+--                  State ->
+--                  ([Response], State)
 let processRequests = lam _. lam _. lam requestLst. lam state. -- Implement me!
     (join (map (compose formatJson requestToJson) requestLst), state)
+
+-- putResponses: [Response] -> ()
 let putResponses = printLn -- Implement me!
 
 recursive
+-- handleNotification: Notification -> State -> ((), State)
+-- handleRequest: Request -> State -> (Response, State)
 let serverMain = lam handleNotification. lam handleRequest. lam state.
   let requests = readRequests () in
   match requests with Some r then
