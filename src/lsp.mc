@@ -57,20 +57,22 @@ let readRequests =
     else
       None ()
   in
+  let rpcToLsp = lam x. Some x in -- Implement me!
+  (optionCompose rpcToLsp
   (optionCompose (processBatch jsonToRequest)
   (optionCompose (compose parseJson readBody)
   (optionCompose (optionFoldMap getLength)
   (compose       (optionMapM parseHeaderField)
-                 readHeaderLines))))
+                 readHeaderLines)))))
 
-let processRequests = lam jsonRpcLst.
+let processRequests = lam _. lam _. lam jsonRpcLst. -- Implement me!
     Some (join (map (compose formatJson requestToJson) jsonRpcLst))
-let putResponses = printLn
+let putResponses = printLn -- Implement me!
 
 recursive
-let serverMain = lam _.
+let serverMain = lam handleNotification. lam handleRequest.
   let _ = (compose       (optionMap putResponses)
-          (optionCompose processRequests
+          (optionCompose (processRequests handleNotification handleRequest)
                          readRequests)) ()
   in serverMain ()
 end
