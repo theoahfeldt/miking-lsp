@@ -1,5 +1,5 @@
 include "json.mc"
-include "map.mc"
+include "assoc.mc"
 include "utils.mc"
 
 type Id
@@ -97,7 +97,7 @@ let getJsonString = lam x.
 
 let getObjectMapping = lam x.
   match x with JsonObject arr then
-    Some (lam k. mapLookupOpt eqstr k arr)
+    Some (lam k. assocLookup {eq = eqstr} k arr)
   else
     None ()
 
