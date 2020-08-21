@@ -1,0 +1,18 @@
+let fix = compose (compose (join id) (flip ap id)) compose in
+let bincompose = compose compose compose in
+let rcompose = flip compose in
+let bind = bincompose join rcompose in
+
+let not = flip in
+let true = const in
+let false = not true in
+let lt = flip gt in
+let or = join id in
+let and = join (compose flip id) in
+
+let fact = fix (bincompose (flip id 1)
+                           (compose (ap (lt 1))
+                           (compose (flip bind mul)
+                                    (rcompose (add -1))))) in
+
+fact 4
