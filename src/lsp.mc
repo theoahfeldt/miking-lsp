@@ -40,14 +40,12 @@ let readHeaderLines = unfoldr (compose matchNewline readLine)
 
 let readBody = lam toRead.
   recursive let f = lam len. lam acc.
-    match readBytesAsString len with (readLen, str) then
-      let new_acc = concat acc str in
-      if lti readLen len then
-        f (subi len readLen) new_acc
-      else
-        new_acc
+    let readResult = readBytesAsString len in
+    let new_acc = concat acc readResult.0 in
+    if lti readResult.1 len then
+      f (subi len readResult.1) new_acc
     else
-      error "Not possible"
+      new_acc
   in
   f toRead ""
 
