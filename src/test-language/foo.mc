@@ -1,4 +1,3 @@
-include "map.mc"
 include "string.mc"
 
 lang FooLang
