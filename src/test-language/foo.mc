@@ -13,6 +13,7 @@ lang FooLang
   | PInt Int
   | PAdd ()
   | PMul ()
+  | PGt ()
   | PString String
   | PConcat ()
   | PPrint ()
@@ -52,6 +53,16 @@ lang FooLang
     optionBind (eval env tm) (lam r2.
     match (r1,r2) with (TmPrim (PInt i1, []), TmPrim (PInt i2, [])) then
       Some (TmPrim (PInt (muli i1 i2), []))
+    else None ()
+    ))
+  | TmPrim (PGt (), [t]) ->
+    optionBind (eval env t) (lam r1.
+    optionBind (eval env tm) (lam r2.
+    match (r1,r2) with (TmPrim (PInt i1, []), TmPrim (PInt i2, [])) then
+      if gti i1 i2 then
+        Some (TmPrim (PConst (), []))
+      else
+        Some (TmPrim (PFlip (), [TmPrim (PConst (), [])]))
     else None ()
     ))
   | TmPrim (PConcat (), [t]) ->
@@ -98,6 +109,7 @@ lang FooLang
   | PInt i -> int2string i
   | PAdd () -> "add"
   | PMul () -> "mul"
+  | PGt () -> "gt"
   | PString s -> cons '"' (snoc s '"')
   | PConcat () -> "concat"
   | PPrint () -> "print"
@@ -131,6 +143,7 @@ let builtins =
       , POn ()
       , PAdd ()
       , PMul ()
+      , PGt ()
       , PConcat ()
       , PPrint ()
       ]
