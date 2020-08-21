@@ -63,8 +63,9 @@ let readRequests =
   (compose       (optionMapM parseHeaderField)
                  readHeaderLines))))
 
-let processRequests = lam _. Some ()
-let putResponses = lam _. printLn "Hello World!"
+let processRequests = lam jsonRpcLst.
+    Some (join (map (compose formatJson requestToJson) jsonRpcLst))
+let putResponses = printLn
 
 recursive
 let serverMain = lam _.
