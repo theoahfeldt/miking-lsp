@@ -1,5 +1,6 @@
 include "parser.mc"
 include "foo.mc"
+include "set.mc"
 
 -- Parser for FooLang, based on stdlib/mexpr/mcore_parser.mc
 
@@ -26,8 +27,9 @@ let token = lex_token ws
 -- symbol : String -> Parser String
 let symbol = lam s. token (lex_string s)
 
-let is_valid_char = lam c.
-  or (is_alphanum c) (eqchar c '_')
+let is_valid_char = lam c. not (or (setMem eqchar c ['(', ')', '\"']) (is_whitespace c))
+
+let is_valid_init_char = lam c. and (is_valid_char c) (not (or (is_digit c) (eqchar c '-')))
 
 -- reserved : String -> Parser String
 --
@@ -54,7 +56,7 @@ let keywords = ["let", "in"]
 -- of reserved keywords.
 let identifier =
   let valid_id =
-    bind (satisfy (lam c. or (is_alpha c) (eqchar '_' c)) "valid identifier") (lam c.
+    bind (satisfy is_valid_init_char "valid identifier") (lam c.
     bind (token (many (satisfy is_valid_char ""))) (lam cs.
     pure (cons c cs)))
   in

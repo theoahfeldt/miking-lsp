@@ -100,18 +100,18 @@ lang FooLang
 
   sem formatPrim =
   | PId () -> "id"
-  | PCompose () -> "compose"
+  | PCompose () -> "<."
   | PConst () -> "const"
   | PAp () -> "ap"
   | PJoin () -> "join"
-  | PFlip () -> "flip"
+  | PFlip () -> "~"
   | POn () -> "on"
   | PInt i -> int2string i
-  | PAdd () -> "add"
-  | PMul () -> "mul"
-  | PGt () -> "gt"
+  | PAdd () -> "+"
+  | PMul () -> "*"
+  | PGt () -> ">"
   | PString s -> cons '"' (snoc s '"')
-  | PConcat () -> "concat"
+  | PConcat () -> "++"
   | PPrint () -> "print"
   | PUnit () -> "()"
 
