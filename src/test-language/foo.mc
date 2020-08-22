@@ -107,9 +107,9 @@ lang FooLang
   | PFlip () -> "~"
   | POn () -> "on"
   | PInt i -> int2string i
-  | PAdd () -> "+"
-  | PMul () -> "*"
-  | PGt () -> ">"
+  | PAdd () -> "add"
+  | PMul () -> "mul"
+  | PGt () -> "gt"
   | PString s -> cons '"' (snoc s '"')
   | PConcat () -> "++"
   | PPrint () -> "print"

@@ -5,14 +5,14 @@ let <=< = <. (<: join) <: in
 
 let true = const in
 let false = ~ true in
-let < = ~ > in
+let lt = ~ gt in
 let or = join id in
 let and = join (<. ~ id) in
 let |> = ~ id in
 
 let fact = fix (<: (|> 1)
-                   (<. (ap (< 1))
-                   (<=< *
-                        (.> (+ -1))))) in
+                   (<. (ap (lt 1))
+                   (<=< mul
+                        (.> (add -1))))) in
 
 fact 4
