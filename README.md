@@ -36,9 +36,9 @@ Currently, this repository contains the following:
   ```
   which should output
   ```
-{"jsonrpc": "2.0", "method": "shutdown", "params": {}, "id": 3}
+  {"jsonrpc": "2.0", "method": "shutdown", "params": {}, "id": 3}
 
-FILE "/path/to/miking-lsp/src/lsp/lsp.mc" 55:7-55:38 ERROR: Unexpected end of input
+  FILE "/path/to/miking-lsp/src/lsp/lsp.mc" 55:7-55:38 ERROR: Unexpected end of input
   ```
   The error is expected as the server should normally keep receiving input until
   a shutdown message is received.
